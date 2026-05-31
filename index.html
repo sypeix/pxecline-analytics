@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINE OA Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--sidebar:#fff;--card:#fff;--border:#e8ecf2;--border2:#d1d9e6;
+  --blue:#2563eb;--blue-lt:#eff4ff;--blue-md:#bfcffe;
+  --green:#059669;--green-lt:#ecfdf5;--green-md:#a7f3d0;
+  --teal:#0891b2;--teal-lt:#ecfeff;
+  --amber:#d97706;--amber-lt:#fffbeb;
+  --red:#dc2626;--red-lt:#fef2f2;
+  --purple:#7c3aed;--purple-lt:#f5f3ff;
+  --t1:#0f172a;--t2:#475569;--t3:#94a3b8;--t4:#cbd5e1;
+  --c-post:#10b981;--c-menu:#3b82f6;--c-vip:#f59e0b;--c-msg:#8b5cf6;--c-live:#f43f5e;
+  --r:12px;--r-lg:16px;--r-sm:8px;
+  --sh-sm:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --sh:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.04);
+  --font:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px}
+
+/* LAYOUT */
+.shell{display:flex;min-height:100vh;max-width:1440px;margin:0 auto}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#06c755,#059669);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(6,199,85,.35);flex-shrink:0}
+.logo-text{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.2px;line-height:1.2}
+.logo-sub{font-size:10px;color:var(--t3)}
+.nav-sec{padding:16px 12px 8px}
+.nav-lbl{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;color:var(--t2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+.nav-item:hover{background:var(--bg);color:var(--t1)}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);font-weight:600}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.av-name{font-size:12px;font-weight:600;color:var(--t1)}
+.av-role{font-size:10px;color:var(--t3)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar-title{font-size:15px;font-weight:700;flex:1}
+.topbar-title span{font-size:12px;font-weight:400;color:var(--t3);margin-left:8px}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--t3)}
+.icon-btn{width:34px;height:34px;border-radius:8px;background:var(--bg);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .15s}
+.icon-btn:hover{background:var(--blue-lt);border-color:var(--blue-md)}
+.content{flex:1;padding:20px 24px;overflow-y:auto}
+
+/* FILTER BAR */
+.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:18px;box-shadow:var(--sh-sm);flex-wrap:wrap}
+.filter-label{font-size:12px;font-weight:600;color:var(--t2);white-space:nowrap}
+.filter-select{padding:6px 28px 6px 10px;border:1.5px solid var(--border2);border-radius:7px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--t1);background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;-webkit-appearance:none;cursor:pointer;transition:border-color .15s}
+.filter-select:focus{outline:none;border-color:var(--blue)}
+.filter-divider{width:1px;height:24px;background:var(--border2);margin:0 2px;flex-shrink:0}
+.filter-apply{margin-left:auto;padding:7px 16px;border-radius:7px;background:var(--blue);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;box-shadow:0 1px 4px rgba(37,99,235,.3);white-space:nowrap}
+.filter-apply:hover{background:#1d4ed8;transform:translateY(-1px)}
+
+/* PAGE */
+.pg{display:none}.pg.active{display:block}
+
+/* KPI */
+.kpi-row{display:grid;gap:14px;margin-bottom:18px}
+.kpi-row.cols-5{grid-template-columns:repeat(5,1fr)}
+.kpi-row.cols-3{grid-template-columns:repeat(3,1fr)}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-sm);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
+.kpi:hover{box-shadow:var(--sh);transform:translateY(-1px)}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--accent,var(--blue));border-radius:0 0 var(--r-lg) var(--r-lg)}
+.kpi.green{--accent:var(--green)}.kpi.teal{--accent:var(--teal)}.kpi.amber{--accent:var(--amber)}.kpi.purple{--accent:var(--purple)}
+.kpi-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.kpi-lbl{font-size:11px;font-weight:600;color:var(--t2);letter-spacing:.1px}
+.kpi-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.kpi-ico.blue{background:var(--blue-lt)}.kpi-ico.green{background:var(--green-lt)}.kpi-ico.teal{background:var(--teal-lt)}.kpi-ico.amber{background:var(--amber-lt)}.kpi-ico.purple{background:var(--purple-lt)}
+.kpi-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--t1);line-height:1;letter-spacing:-1px;margin-bottom:8px}
+.kpi-val em{font-size:14px;font-style:normal;opacity:.6}
+.kpi-ftr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.badge.up{background:var(--green-lt);color:var(--green)}.badge.dn{background:var(--red-lt);color:var(--red)}.badge.neu{background:var(--blue-lt);color:var(--blue)}.badge.am{background:var(--amber-lt);color:var(--amber)}
+.kpi-desc{font-size:11px;color:var(--t3)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh-sm);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--sh)}
+.card-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:700;color:var(--t1)}
+.card-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.chip{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--bg);color:var(--t3);font-family:var(--mono);border:1px solid var(--border2);white-space:nowrap}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.g64{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:18px}
+.mb{margin-bottom:18px}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
+
+/* SOURCE TAGS */
+.src-tag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.3px;text-transform:uppercase}
+.src-tag.ec{background:#ecfdf5;color:#059669}.src-tag.px{background:#eff6ff;color:#2563eb}
+
+/* INSIGHT */
+.insight{background:linear-gradient(135deg,#ecfdf5,#eff6ff);border:1px solid #a7f3d0;border-radius:var(--r);padding:12px 16px;font-size:12px;color:#064e3b;margin-bottom:18px;display:flex;gap:10px;line-height:1.7}
+.insight strong{color:var(--green)}
+
+/* TOGGLES */
+.src-toggle{display:flex;gap:5px}
+.src-btn{padding:5px 14px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;border:1.5px solid var(--border2);background:none;color:var(--t3);transition:all .15s;font-family:var(--font)}
+.src-btn.ec.active{border-color:var(--green);background:var(--green-lt);color:var(--green)}
+.src-btn.px.active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue)}
+
+/* TYPE CARDS */
+.type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.type-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;border-left:3px solid var(--c,var(--border))}
+.type-name{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px}
+.type-rev{font-family:var(--mono);font-size:16px;font-weight:700}
+.type-meta{font-size:11px;color:var(--t3);margin-top:3px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border);background:var(--bg)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
+tbody tr:hover{background:#f8fafc}
+tbody tr:last-child{border-bottom:none}
+td{padding:8px 10px}
+.td-name{font-weight:600;color:var(--t1)}
+.td-mono{font-family:var(--mono);font-size:12px;color:var(--t2)}
+.td-rev{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--t1)}
+.td-hi{color:var(--green)!important;font-weight:700!important}
+.type-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-block}
+.bar-wrap{display:flex;align-items:center;gap:6px}
+.mini-bg{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:36px}
+.mini-fill{height:100%;border-radius:2px}
+.month-dots{display:flex;gap:2px}
+.mdot{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg);color:var(--t4);font-family:var(--mono);border:1px solid var(--border)}
+.mdot.on{background:var(--green-lt);color:var(--green);border-color:var(--green-md)}
+
+/* PLAN CARDS */
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.plan-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;border-top:3px solid var(--c,var(--border))}
+.plan-rank{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--cc,var(--t3));margin-bottom:8px}
+.plan-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.plan-body{font-size:12px;color:var(--t2);line-height:1.75}
+.plan-body strong{color:var(--t1)}
+
+.footer-note{font-size:11px;color:var(--t3);margin-top:8px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);line-height:1.9}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="logo-mark">L</div>
+    <div><div class="logo-text">LINE OA</div><div class="logo-sub">Analytics Dashboard</div></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl">Overview</div>
+    <button class="nav-item active" onclick="navTo('overview',this)"><span class="nav-icon">📊</span>Performance Overview</button>
+    <button class="nav-item" onclick="navTo('trend',this)"><span class="nav-icon">📈</span>Monthly Trends</button>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl">Channel Analysis</div>
+    <button class="nav-item" onclick="navTo('campaign',this)"><span class="nav-icon">🎯</span>Campaign Metrics</button>
+    <button class="nav-item" onclick="navTo('binding',this)"><span class="nav-icon">🔗</span>Binding Analysis</button>
+  </div>
+  <div class="sb-footer">
+    <div class="avatar">DA</div>
+    <div><div class="av-name">Data Analyst</div><div class="av-role">LINE OA Team</div></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">LINE OA Analytics <span id="page-label">— Performance Overview</span></div>
+    <div class="search-box">🔍&nbsp; Search campaigns…</div>
+    <div style="display:flex;gap:8px">
+      <div class="icon-btn">🔔</div>
+      <div class="icon-btn">↗️</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <span class="filter-label">Date Range</span>
+      <select class="filter-select" id="f-date" onchange="applyFilter()">
+        <option value="Apr">Apr '26 (Latest)</option>
+        <option value="Mar">Mar '26</option>
+        <option value="Feb">Feb '26</option>
+        <option value="Jan">Jan '26</option>
+        <option value="Dec">Dec '25</option>
+        <option value="All">All Months (Dec–Apr)</option>
+      </select>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Channel</span>
+      <select class="filter-select" id="f-channel" onchange="applyFilter()">
+        <option value="All">All Channels</option>
+        <option value="EC">EC — 全電商 LINE OA</option>
+        <option value="PX">PX — 官方 LINE OA</option>
+      </select>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Medium</span>
+      <select class="filter-select" id="f-medium" onchange="applyFilter()">
+        <option value="All">All Types</option>
+        <option value="Post">Post</option>
+        <option value="Menu">Menu</option>
+        <option value="VIP Campaign">VIP Campaign</option>
+        <option value="Message">Message</option>
+        <option value="Live">Live</option>
+      </select>
+      <button class="filter-apply" onclick="applyFilter()">Apply Filter</button>
+    </div>
+
+    <!-- ══ PAGE: OVERVIEW ══ -->
+    <div id="pg-overview" class="pg active">
+
+      <div class="kpi-row cols-5">
+        <div class="kpi"><div class="kpi-hdr"><div class="kpi-lbl">Total Traffic</div><div class="kpi-ico blue">📶</div></div><div class="kpi-val" id="kpi-traffic">—</div><div class="kpi-ftr"><span class="badge neu" id="kpi-traffic-b">—</span><span class="kpi-desc">EC + PX</span></div></div>
+        <div class="kpi green"><div class="kpi-hdr"><div class="kpi-lbl">Total Revenue</div><div class="kpi-ico green">💰</div></div><div class="kpi-val" id="kpi-revenue">—</div><div class="kpi-ftr"><span class="badge up" id="kpi-revenue-b">—</span></div></div>
+        <div class="kpi teal"><div class="kpi-hdr"><div class="kpi-lbl">Total Orders</div><div class="kpi-ico teal">🛒</div></div><div class="kpi-val" id="kpi-orders">—</div><div class="kpi-ftr"><span class="badge neu" id="kpi-orders-b">—</span></div></div>
+        <div class="kpi amber"><div class="kpi-hdr"><div class="kpi-lbl">Friend Count</div><div class="kpi-ico amber">👥</div></div><div class="kpi-val" id="kpi-friends">—</div><div class="kpi-ftr"><span class="badge up" id="kpi-friends-b">—</span><span class="kpi-desc">累積</span></div></div>
+        <div class="kpi purple"><div class="kpi-hdr"><div class="kpi-lbl">Binding Rate</div><div class="kpi-ico purple">🔗</div></div><div class="kpi-val" id="kpi-bindrate">—</div><div class="kpi-ftr"><span class="badge up" id="kpi-bindrate-b">—</span></div></div>
+      </div>
+
+      <div class="insight"><span>💡</span><div id="ov-insight">—</div></div>
+
+      <div class="g64">
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">Post Engagement Trends</div><div class="card-sub">月度業績 — EC vs PX LINE OA（萬元）</div></div><div class="chip" id="ov-rev-chip">—</div></div>
+          <canvas id="c-ov-rev" height="185"></canvas>
+          <div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div><span class="src-tag ec">EC</span>全電商 OA</div><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div><span class="src-tag px">PX</span>官方 OA</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">Placement View Distribution</div><div class="card-sub" id="donut-sub">流量渠道佔比</div></div></div>
+          <canvas id="c-ov-donut" height="185"></canvas>
+          <div class="legend" id="donut-legend"></div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">ROAS 月度對比</div><div class="card-sub">EC vs PX — 廣告投報率</div></div></div>
+          <canvas id="c-ov-roas" height="185"></canvas>
+          <div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>EC</div><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>PX</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">好友數 & 綁定率趨勢</div><div class="card-sub">Jan–May '26 — 此專案核心指標</div></div></div>
+          <canvas id="c-ov-bind" height="185"></canvas>
+          <div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>好友數</div><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>綁定數</div><div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>綁定率%（右軸）</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ PAGE: TREND ══ -->
+    <div id="pg-trend" class="pg">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span style="font-size:11px;color:var(--t2);font-weight:600">Channel：</span>
+        <div class="src-toggle">
+          <button class="src-btn ec active" id="tsrc-ec" onclick="setTSrc('EC',this)">EC 全電商 OA</button>
+          <button class="src-btn px" id="tsrc-px" onclick="setTSrc('PX',this)">PX 官方 OA</button>
+        </div>
+        <span style="font-size:11px;color:var(--t3);margin-left:4px">三項指標同步顯示</span>
+      </div>
+
+      <div class="card mb">
+        <div class="card-hdr"><div><div class="card-title" id="t-rev-title">EC — 各月業績拆解</div><div class="card-sub">Post / Menu / VIP Campaign / Message（萬元）</div></div><div class="chip" id="t-rev-chip">—</div></div>
+        <canvas id="c-t-rev" height="130"></canvas>
+        <div class="legend" id="t-rev-leg"></div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title" id="t-flow-title">EC — 各月流量拆解</div><div class="card-sub">各類型進站人數</div></div><div class="chip" id="t-flow-chip">—</div></div>
+          <canvas id="c-t-flow" height="170"></canvas>
+          <div class="legend" id="t-flow-leg"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title" id="t-ord-title">EC — 各月訂單拆解</div><div class="card-sub">各類型訂單數</div></div><div class="chip" id="t-ord-chip">—</div></div>
+          <canvas id="c-t-ord" height="170"></canvas>
+          <div class="legend" id="t-ord-leg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: CAMPAIGN ══ -->
+    <div id="pg-campaign" class="pg">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <span style="font-size:11px;color:var(--t2);font-weight:600">Channel：</span>
+        <div class="src-toggle">
+          <button class="src-btn ec active" id="csrc-ec" onclick="setCampSrc('EC')"><span class="src-tag ec">EC</span>&nbsp;全電商 OA</button>
+          <button class="src-btn px" id="csrc-px" onclick="setCampSrc('PX')"><span class="src-tag px">PX</span>&nbsp;官方 OA</button>
+        </div>
+      </div>
+      <div class="card mb"><div class="card-hdr"><div><div class="card-title" id="type-title">EC — 各內容類型總覽</div><div class="card-sub">全期合計（Dec '25 – Apr '26）</div></div></div><div class="type-grid" id="type-grid"></div></div>
+      <div class="card mb"><div class="card-hdr"><div><div class="card-title" id="camp-chart-title">Top 15 EC Campaigns — 業績排名</div><div class="card-sub">全期合計，已剔除均價異常</div></div></div><canvas id="c-camp-bar" height="250"></canvas></div>
+      <div class="card"><div class="card-hdr"><div><div class="card-title" id="camp-tbl-title">EC Campaign 明細</div><div class="card-sub">Top 15，依總收益排序</div></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>#</th><th>活動名稱</th><th>渠道</th><th>類型</th><th>月份</th><th>流量</th><th>訂單</th><th>轉換率</th><th>均價</th><th>總收益</th><th>佔比</th></tr></thead><tbody id="camp-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: BINDING ══ -->
+    <div id="pg-binding" class="pg">
+      <div class="kpi-row cols-3" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi green"><div class="kpi-hdr"><div class="kpi-lbl">累積綁定數（May）</div><div class="kpi-ico green">🔗</div></div><div class="kpi-val">58,799</div><div class="kpi-ftr"><span class="badge up">↑ +18,858</span><span class="kpi-desc">vs Apr</span></div></div>
+        <div class="kpi teal"><div class="kpi-hdr"><div class="kpi-lbl">綁定率（May）</div><div class="kpi-ico teal">📊</div></div><div class="kpi-val">41.7<em>%</em></div><div class="kpi-ftr"><span class="badge up">Jan 13.4% → May 41.7%</span></div></div>
+        <div class="kpi"><div class="kpi-hdr"><div class="kpi-lbl">好友總數（May）</div><div class="kpi-ico blue">👥</div></div><div class="kpi-val">140,982</div><div class="kpi-ftr"><span class="badge up">↑ +16,784</span><span class="kpi-desc">新增</span></div></div>
+        <div class="kpi amber"><div class="kpi-hdr"><div class="kpi-lbl">Apr 綁定 ÷ 新好友</div><div class="kpi-ico amber">⚡</div></div><div class="kpi-val">104.8<em>%</em></div><div class="kpi-ftr"><span class="badge am">存量補綁啟動</span></div></div>
+      </div>
+
+      <div class="insight"><span>🔑</span><div><strong>關鍵發現：</strong>Apr 起新增綁定已超越新增好友（104.8%），大量<strong>舊好友</strong>正在補綁。貼圖活動單波最高帶 <strong>6,992 綁定</strong>，新好友率 95%+。VIP 推播帶回 <strong>8,907 既有好友</strong>補綁，專攻存量。</div></div>
+
+      <div class="g2">
+        <div class="card"><div class="card-hdr"><div><div class="card-title">好友數 vs 綁定數 趨勢</div><div class="card-sub">累積（Jan–May '26）</div></div></div><canvas id="c-b-friend" height="190"></canvas><div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>好友數</div><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>綁定數</div></div></div>
+        <div class="card"><div class="card-hdr"><div><div class="card-title">綁定率趨勢</div><div class="card-sub">綁定數 ÷ 好友數（%）</div></div><div class="chip">Target: 50%?</div></div><canvas id="c-b-rate" height="190"></canvas></div>
+      </div>
+      <div class="g2">
+        <div class="card"><div class="card-hdr"><div><div class="card-title">每月新增好友 vs 新增綁定</div><div class="card-sub">Apr 起綁定超越新好友</div></div></div><canvas id="c-b-new" height="190"></canvas><div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>新增好友</div><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>新增綁定</div></div></div>
+        <div class="card"><div class="card-hdr"><div><div class="card-title">Deeplink — 新好友 vs 既有好友</div><div class="card-sub">各 Campaign 好友組成</div></div></div><canvas id="c-b-dl" height="190"></canvas></div>
+      </div>
+      <div class="g2">
+        <div class="card"><div class="card-hdr"><div><div class="card-title">貼圖活動各管道綁定轉換率</div><div class="card-sub">LINE OA 推播 vs FB / APP</div></div></div><canvas id="c-b-sticker" height="200"></canvas></div>
+        <div class="card"><div class="card-hdr"><div><div class="card-title">linebinding UTM 月度追蹤</div><div class="card-sub">Post 推播流量 & 轉換率</div></div></div><canvas id="c-b-lb" height="200"></canvas><div class="legend"><div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>流量</div><div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>轉換率%</div></div></div>
+      </div>
+
+      <div class="card mb"><div class="card-hdr"><div><div class="card-title">Deeplink Campaign 效率分析</div><div class="card-sub">新好友率 ≥ 80% 標記 ✦</div></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Campaign</th><th>類型</th><th>點擊/進入</th><th>新好友</th><th>既有好友</th><th>新好友率</th><th>規劃建議</th></tr></thead><tbody id="dl-tbody"></tbody></table></div>
+      </div>
+
+      <div class="card" style="border-color:#a7f3d0">
+        <div class="card-hdr"><div><div class="card-title" style="color:var(--green)">📐 下次綁定 Campaign 規劃建議</div><div class="card-sub">基於現有數據推估最佳策略組合</div></div></div>
+        <div class="plan-grid">
+          <div class="plan-card" style="--c:var(--green);--cc:var(--green)"><div class="plan-rank">🥇 主力引擎</div><div class="plan-title">LINE OA 貼圖活動</div><div class="plan-body">• 單場最高 <strong>6,992 綁定</strong>（12/28）<br>• 新好友率 <strong>95%+</strong><br>• 轉換率 <strong>15～20%</strong><br>• 建議：每季 ≥ 2 波，集中節慶前</div></div>
+          <div class="plan-card" style="--c:#f59e0b;--cc:#d97706"><div class="plan-rank">🥈 存量滲透</div><div class="plan-title">閃靈地推 + 大全聯場域</div><div class="plan-body">• 新好友率 <strong>93%</strong>，線下最高效<br>• 單活動帶 <strong>8,445 新好友</strong><br>• 建議：與新店開幕 / 週年慶綁定</div></div>
+          <div class="plan-card" style="--c:var(--blue);--cc:var(--blue)"><div class="plan-rank">🥉 存量啟動</div><div class="plan-title">VIP 推播（舊好友回綁）</div><div class="plan-body">• 新好友率僅 <strong>3.7%</strong><br>• 帶回 <strong>8,907 既有好友</strong> 補綁<br>• 建議：搭配業績活動同步推播</div></div>
+        </div>
+        <div class="footer-note">⚠ 數據缺口：CPB（Cost Per Binding）尚無法計算，需將推播費用與 Deeplink New Contacts 對齊。CPB 是最有說服力的主管彙報指標，建議下一步完成費用對齊。</div>
+      </div>
+      <div class="footer-note" style="margin-top:14px">
+        * 好友數 & 綁定數：工作表14，月底累積快照（Jan–May '26）。<br>
+        * PX = 全聯官方 LINE OA（source: line/post, line/menu, line/live）；EC = 全電商 LINE OA（source: line_ec/*）。<br>
+        * Mar/Apr 費用欄 EC 未填入，ROAS 無法計算。Feb PX 業績採摘要表值（$2,601,473）。
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ══ DATA ══════════════════════════════════════════════════════════
+const MONTHS=['Dec \'25',"Jan '26","Feb '26","Mar '26","Apr '26"];
+const MO=['Dec','Jan','Feb','Mar','Apr'];
+
+const AM={Dec:{EC:{flow:12375,orders:266,revenue:869281,cost:22560,roas:38.5,conv:2.15,Post:{flow:3213,orders:78,revenue:214813},Menu:{flow:9114,orders:187,revenue:654028},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:29,orders:1,revenue:440},Live:{flow:0,orders:0,revenue:0}},PX:{flow:100834,orders:2319,revenue:5255162,cost:82883,roas:63.4,conv:2.3,Post:{flow:92162,orders:1972,revenue:4116516},Menu:{flow:3056,orders:77,revenue:153867},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:5616,orders:270,revenue:984779}},total:{flow:113209,orders:2585,revenue:6124443}},Jan:{EC:{flow:79313,orders:2580,revenue:29613779,cost:165893,roas:178.5,conv:3.25,Post:{flow:35233,orders:1119,revenue:9776824},Menu:{flow:37435,orders:1311,revenue:17770741},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:6642,orders:150,revenue:2066214},Live:{flow:0,orders:0,revenue:0}},PX:{flow:98363,orders:1664,revenue:3898177,cost:69336,roas:56.2,conv:1.69,Post:{flow:90997,orders:1483,revenue:3558391},Menu:{flow:3649,orders:73,revenue:120296},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:3717,orders:108,revenue:219490}},total:{flow:177676,orders:4244,revenue:33511956}},Feb:{EC:{flow:50444,orders:2142,revenue:15136123,cost:145509,roas:104.0,conv:4.25,Post:{flow:18462,orders:782,revenue:13347771},Menu:{flow:7397,orders:515,revenue:980806},'VIP Campaign':{flow:18980,orders:678,revenue:282949},Message:{flow:5604,orders:167,revenue:416617},Live:{flow:0,orders:0,revenue:0}},PX:{flow:59645,orders:1128,revenue:2601473,cost:74876,roas:34.7,conv:1.89,Post:{flow:54769,orders:1024,revenue:141171},Menu:{flow:3417,orders:54,revenue:10884},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1459,orders:50,revenue:0}},total:{flow:110089,orders:3270,revenue:17737596}},Mar:{EC:{flow:85362,orders:4549,revenue:21306165,cost:0,roas:null,conv:5.33,Post:{flow:33381,orders:1479,revenue:7614059},Menu:{flow:5136,orders:431,revenue:2664680},'VIP Campaign':{flow:41663,orders:2305,revenue:9248850},Message:{flow:4640,orders:310,revenue:1609556},Live:{flow:0,orders:0,revenue:0}},PX:{flow:76327,orders:1521,revenue:3377325,cost:76848,roas:43.9,conv:1.99,Post:{flow:66647,orders:1280,revenue:2678706},Menu:{flow:3680,orders:58,revenue:180767},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:6000,orders:183,revenue:517852}},total:{flow:161689,orders:6070,revenue:24683490}},Apr:{EC:{flow:86417,orders:3580,revenue:14018766,cost:0,roas:null,conv:4.14,Post:{flow:32497,orders:1124,revenue:6044134},Menu:{flow:37766,orders:1492,revenue:4456352},'VIP Campaign':{flow:8351,orders:643,revenue:2172242},Message:{flow:7048,orders:277,revenue:1190986},Live:{flow:0,orders:0,revenue:0}},PX:{flow:91464,orders:1056,revenue:1929645,cost:63819,roas:30.2,conv:1.15,Post:{flow:86031,orders:935,revenue:1720974},Menu:{flow:3977,orders:66,revenue:113209},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1399,orders:52,revenue:85071}},total:{flow:177881,orders:4636,revenue:15948411}}};
+
+const FD=[{month:"Jan '26",friends:62438,bound:8343,rate:13.4,nf:62438,nb:8343},{month:"Feb '26",friends:104148,bound:19821,rate:19.0,nf:41710,nb:11478},{month:"Mar '26",friends:111761,bound:26912,rate:24.1,nf:7613,nb:7091},{month:"Apr '26",friends:124198,bound:39941,rate:32.2,nf:12437,nb:13029},{month:"May '26",friends:140982,bound:58799,rate:41.7,nf:16784,nb:18858}];
+
+const EC_CAMPS=[{name:"vip_jan_p2-1",type:"Menu",months:["Jan","Feb","Mar","Apr"],flow:15231,orders:672,revenue:4862530,conv:4.41,avg:7236},{name:"vip_faq",type:"Message",months:["Dec","Jan","Feb","Mar","Apr"],flow:2421,orders:238,revenue:3582495,conv:9.83,avg:15052},{name:"2-1_p1-4",type:"VIP Campaign",months:["Feb","Mar","Apr"],flow:24707,orders:1298,revenue:3287489,conv:5.25,avg:2533},{name:"尾牙祭p2-1",type:"Menu",months:["Dec","Jan","Feb","Mar"],flow:7806,orders:328,revenue:2945444,conv:4.2,avg:8980},{name:"3-1_p1-1",type:"VIP Campaign",months:["Mar","Apr"],flow:9432,orders:432,revenue:2550756,conv:4.58,avg:5905},{name:"3-1_p1-3",type:"VIP Campaign",months:["Mar","Apr"],flow:10610,orders:785,revenue:2166481,conv:7.4,avg:2760},{name:"vip_0102",type:"Post",months:["Dec","Jan","Feb","Mar","Apr"],flow:2343,orders:118,revenue:2068992,conv:5.04,avg:17534},{name:"vip_0108",type:"Post",months:["Jan","Feb","Mar","Apr"],flow:2693,orders:113,revenue:1994376,conv:4.2,avg:17649},{name:"linebinding",type:"Post",months:["Dec","Jan","Feb","Mar","Apr"],flow:6373,orders:399,revenue:1890834,conv:6.26,avg:4739},{name:"home",type:"Menu",months:["Apr"],flow:9807,orders:473,revenue:1445972,conv:4.82,avg:3057},{name:"首購7折",type:"Menu",months:["Apr"],flow:9351,orders:447,revenue:1442033,conv:4.78,avg:3226},{name:"2-1_p1-1",type:"VIP Campaign",months:["Feb","Mar","Apr"],flow:9147,orders:422,revenue:1382453,conv:4.61,avg:3276},{name:"vip_0114discount",type:"Post",months:["Jan","Feb","Mar","Apr"],flow:3255,orders:163,revenue:1378150,conv:5.01,avg:8455},{name:"vip_0327bn",type:"Post",months:["Mar","Apr"],flow:1156,orders:57,revenue:1253026,conv:4.93,avg:21983},{name:"3-1_p1-7",type:"VIP Campaign",months:["Mar","Apr"],flow:8004,orders:325,revenue:1179758,conv:4.06,avg:3630}];
+const PX_CAMPS=[{name:"1211_pxlive",type:"Live",months:["Dec","Jan","Feb","Mar"],flow:5515,orders:268,revenue:969064,conv:4.86,avg:3616},{name:"1211-3_12-1_01",type:"Post",months:["Dec","Jan","Feb","Mar"],flow:2830,orders:137,revenue:451470,conv:4.84,avg:3295},{name:"1212-3_12-1_01",type:"Post",months:["Dec","Jan","Feb","Mar"],flow:4349,orders:171,revenue:430372,conv:3.93,avg:2517},{name:"(not set)",type:"Post",months:["Dec","Jan","Feb","Mar","Apr"],flow:2910,orders:26,revenue:403240,conv:0.89,avg:15509},{name:"0305_pxlive",type:"Live",months:["Mar","Apr"],flow:3028,orders:104,revenue:349513,conv:3.43,avg:3361},{name:"0308-1_2-2_03",type:"Post",months:["Mar","Apr"],flow:425,orders:12,revenue:328150,conv:2.82,avg:27346},{name:"週年慶",type:"Post",months:["Jan","Feb","Mar","Apr"],flow:3126,orders:83,revenue:283295,conv:2.66,avg:3413},{name:"0321-3_3-1_01",type:"Post",months:["Mar","Apr"],flow:7082,orders:106,revenue:253110,conv:1.5,avg:2388},{name:"0403-1_3-2_10",type:"Post",months:["Apr"],flow:156,orders:10,revenue:198748,conv:6.41,avg:19875},{name:"0326_pxlive",type:"Live",months:["Mar","Apr"],flow:3539,orders:85,revenue:170461,conv:2.4,avg:2005},{name:"0129_pxlive",type:"Live",months:["Jan","Feb","Mar","Apr"],flow:3868,orders:115,revenue:166832,conv:2.97,avg:1451},{name:"0109-1_1-1_12",type:"Post",months:["Jan","Feb","Mar","Apr"],flow:588,orders:6,revenue:110138,conv:1.02,avg:18356},{name:"kc_260403-260409",type:"Post",months:["Mar","Apr"],flow:5055,orders:15,revenue:109524,conv:0.3,avg:7302},{name:"1217-2_12-1_01",type:"Post",months:["Dec","Jan","Feb","Mar","Apr"],flow:2221,orders:63,revenue:100660,conv:2.84,avg:1598},{name:"1205-1_12-1_01",type:"Post",months:["Dec","Jan","Feb"],flow:95,orders:5,revenue:100160,conv:5.26,avg:20032}];
+
+const TYPE_INFO={EC:{Post:{icon:"📮",rev:31827461,flow:122394,orders:4555,conv:3.72},Menu:{icon:"📋",rev:17666475,flow:95912,orders:3767,conv:3.93},"VIP Campaign":{icon:"🎯",rev:11704041,flow:68994,orders:3626,conv:5.26},Message:{icon:"💬",rev:5283813,flow:23963,orders:905,conv:3.78}},PX:{Post:{icon:"📮",rev:12623519,flow:385550,orders:6679,conv:1.73},Live:{icon:"📺",rev:2157166,flow:18191,orders:663,conv:3.65},Menu:{icon:"📋",rev:507833,flow:17769,orders:327,conv:1.84}}};
+const TC={Post:'#10b981',Menu:'#3b82f6','VIP Campaign':'#f59e0b',Message:'#8b5cf6',Live:'#f43f5e'};
+
+const DL=[{name:"貼圖宣傳導流",type:"Sticker",ac:31931,nc:26227,ex:5704,nr:82.1,note:"主力拉新，每季≥2波"},{name:"閃靈宣傳_總部OA",type:"OA推播",ac:13450,nc:12378,ex:1072,nr:92.0,note:"配合線下 IP 活動"},{name:"閃靈宣傳_大全聯地推",type:"Offline",ac:9065,nc:8445,ex:620,nr:93.2,note:"與新開幕/週年慶綁定"},{name:"VIP貼文_總部導流",type:"OA推播",ac:9249,nc:342,ex:8907,nr:3.7,note:"啟動存量好友補綁"},{name:"全聯新春大禮包",type:"Campaign",ac:3282,nc:2916,ex:366,nr:88.8,note:"節慶 Campaign，建議複製"},{name:"新年綁定抽獎",type:"Campaign",ac:2689,nc:2003,ex:686,nr:74.5,note:"抽獎誘因帶沉睡好友"},{name:"樂天路跑",type:"Event",ac:3123,nc:1980,ex:1143,nr:63.4,note:"異業合作，評估 CPB"},{name:"商品展",type:"Event",ac:2857,nc:1836,ex:1021,nr:64.3,note:"實體展會，評估 CPB"}];
+
+// ══ CHART DEFAULTS ════════════════════════════════════════════════
+Chart.defaults.color='#94a3b8';
+Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
+Chart.defaults.font.size=11;
+const GR={color:'rgba(226,232,240,.8)',drawBorder:false};
+const fmtK=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':v;
+const fmtW=v=>Math.round(v/1e4)+'萬';
+
+// ══ FILTER STATE ══════════════════════════════════════════════════
+let fDate='Apr', fChannel='All', fMedium='All';
+
+function getFilteredData(){
+  const months = fDate==='All' ? MO : [fDate];
+  let flow=0,orders=0,revenue=0,cost=0;
+  months.forEach(m=>{
+    const d=AM[m];
+    ['EC','PX'].forEach(s=>{
+      if(fChannel!=='All' && fChannel!==s) return;
+      if(fMedium==='All'){
+        flow+=d[s].flow; orders+=d[s].orders; revenue+=d[s].revenue; cost+=d[s].cost;
+      } else {
+        const t=d[s][fMedium]||{flow:0,orders:0,revenue:0};
+        flow+=t.flow; orders+=t.orders; revenue+=t.revenue;
+        cost+=d[s].cost;
+      }
+    });
+  });
+  return {flow,orders,revenue,cost,roas:cost>0?Math.round(revenue/cost):null,conv:flow>0?Math.round(orders/flow*1000)/10:0};
+}
+
+function getDonutData(){
+  const months = fDate==='All' ? MO : [fDate];
+  let ecF=0,pxF=0;
+  months.forEach(m=>{
+    if(fChannel==='All'||fChannel==='EC') ecF+=AM[m].EC.flow;
+    if(fChannel==='All'||fChannel==='PX') pxF+=AM[m].PX.flow;
+  });
+  return {ec:ecF,px:pxF};
+}
+
+// ══ OVERVIEW CHARTS ═══════════════════════════════════════════════
+let ovRevCh=null, ovDonutCh=null, ovRoasCh=null, ovBindCh=null;
+
+function buildRevData(){
+  return {
+    labels:MONTHS,
+    datasets:[
+      {label:'EC',data:MO.map(m=>Math.round(AM[m].EC.revenue/1e4)),backgroundColor:'#10b981',borderRadius:5,borderSkipped:false},
+      {label:'PX',data:MO.map(m=>Math.round(AM[m].PX.revenue/1e4)),backgroundColor:'#3b82f6',borderRadius:5,borderSkipped:false},
+    ]
+  };
+}
+
+function initOverviewCharts(){
+  // Rev bar
+  ovRevCh=new Chart(document.getElementById('c-ov-rev'),{type:'bar',data:buildRevData(),options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}萬`}}},scales:{x:{stacked:true,grid:GR},y:{stacked:true,grid:GR,ticks:{callback:fmtW}}}}});
+
+  // Donut
+  const dd=getDonutData();
+  ovDonutCh=new Chart(document.getElementById('c-ov-donut'),{type:'doughnut',data:{labels:['EC 全電商 OA','PX 官方 OA'],datasets:[{data:[dd.ec,dd.px],backgroundColor:['#10b981','#3b82f6'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toLocaleString()}`}}}}});
+  updateDonutLegend(dd);
+
+  // ROAS
+  const roasEC=MO.map(m=>AM[m].EC.roas), roasPX=MO.map(m=>AM[m].PX.roas);
+  ovRoasCh=new Chart(document.getElementById('c-ov-roas'),{type:'line',data:{labels:MONTHS,datasets:[{label:'EC',data:roasEC,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981',spanGaps:true},{label:'PX',data:roasPX,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.06)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#3b82f6',spanGaps:true}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y??'N/A'}x`}}},scales:{x:{grid:GR},y:{grid:GR,ticks:{callback:v=>v+'x'}}}}});
+
+  // Friend & Binding combo
+  ovBindCh=new Chart(document.getElementById('c-ov-bind'),{type:'bar',data:{labels:FD.map(d=>d.month),datasets:[{label:'好友數',data:FD.map(d=>d.friends),backgroundColor:'rgba(59,130,246,.25)',borderRadius:4,yAxisID:'y'},{label:'綁定數',data:FD.map(d=>d.bound),backgroundColor:'#10b981',borderRadius:4,yAxisID:'y'},{label:'綁定率%',data:FD.map(d=>d.rate),type:'line',borderColor:'#f59e0b',backgroundColor:'transparent',pointRadius:5,pointBackgroundColor:'#f59e0b',tension:.4,yAxisID:'y2'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:GR,position:'left',ticks:{callback:fmtK}},y2:{grid:{display:false},position:'right',min:0,max:55,ticks:{callback:v=>v+'%'}}}}});
+}
+
+function updateDonutLegend(dd){
+  const t=dd.ec+dd.px;
+  const ecP=t>0?Math.round(dd.ec/t*100):0;
+  const pxP=t>0?Math.round(dd.px/t*100):0;
+  document.getElementById('donut-legend').innerHTML=`
+    <div class="leg-item"><div class="leg-dot" style="background:#10b981"></div><span class="src-tag ec">EC</span>&nbsp;${dd.ec.toLocaleString()} (${ecP}%)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div><span class="src-tag px">PX</span>&nbsp;${dd.px.toLocaleString()} (${pxP}%)</div>`;
+  const mon=fDate==='All'?'All Months':fDate+" '26";
+  document.getElementById('donut-sub').textContent=`流量渠道佔比 — ${mon}`;
+}
+
+function updateKPIs(){
+  const d=getFilteredData();
+  const label=fDate==='All'?'全期':''+fDate;
+  // traffic
+  document.getElementById('kpi-traffic').textContent=fmtK(d.flow);
+  document.getElementById('kpi-traffic-b').textContent=`${label} EC+PX`;
+  document.getElementById('kpi-traffic-b').className='badge neu';
+  // revenue
+  document.getElementById('kpi-revenue').innerHTML=`$${fmtK(d.revenue)}`;
+  document.getElementById('kpi-revenue-b').textContent=d.roas?`ROAS ${d.roas}x`:'費用未填';
+  document.getElementById('kpi-revenue-b').className=d.roas?'badge up':'badge am';
+  // orders
+  document.getElementById('kpi-orders').textContent=d.orders.toLocaleString();
+  document.getElementById('kpi-orders-b').textContent=`轉換率 ${d.conv}%`;
+  // friends & binding — always show latest (Apr/May)
+  const latestF=FD[3]; // Apr snapshot
+  document.getElementById('kpi-friends').textContent=FD[4].friends.toLocaleString();
+  document.getElementById('kpi-friends-b').textContent=`+${FD[4].nf.toLocaleString()} May新增`;
+  document.getElementById('kpi-bindrate').innerHTML=FD[4].rate+'<em>%</em>';
+  document.getElementById('kpi-bindrate-b').textContent=`↑ Jan 13.4% → May ${FD[4].rate}%`;
+
+  // insight
+  const ecR=fDate==='All'?null:AM[fDate]?.EC;
+  const pxR=fDate==='All'?null:AM[fDate]?.PX;
+  let ins='';
+  if(fDate==='All'){
+    ins=`<strong>全期總覽：</strong>EC 業績合計 <strong>$${fmtK(Object.values(AM).reduce((a,m)=>a+m.EC.revenue,0))}</strong>，PX 業績合計 <strong>$${fmtK(Object.values(AM).reduce((a,m)=>a+m.PX.revenue,0))}</strong>。EC 流量佔比從 Dec 10.9% 成長至 Apr 48.6%，VIP Campaign 轉換率最高（5.26%）。綁定率從 Jan 13.4% 升至 May <strong>41.7%</strong>。`;
+  } else if(ecR){
+    const tf=ecR.flow+pxR.flow;
+    ins=`<strong>${fDate} '26 摘要：</strong>總流量 <strong>${fmtK(tf)}</strong>，EC 佔 <strong>${Math.round(ecR.flow/tf*100)}%</strong>、PX 佔 <strong>${Math.round(pxR.flow/tf*100)}%</strong>。EC 業績 <strong>$${fmtK(ecR.revenue)}</strong>（ROAS ${ecR.roas??'N/A'}x），PX 業績 <strong>$${fmtK(pxR.revenue)}</strong>（ROAS ${pxR.roas??'N/A'}x）。EC 轉換率 ${ecR.conv}%，PX ${pxR.conv}%。`;
+  }
+  document.getElementById('ov-insight').innerHTML=ins;
+
+  // update donut
+  const dd=getDonutData();
+  if(ovDonutCh){
+    ovDonutCh.data.datasets[0].data=[dd.ec,dd.px];
+    ovDonutCh.update();
+    updateDonutLegend(dd);
+  }
+
+  // update rev chip
+  document.getElementById('ov-rev-chip').textContent=fDate==='All'?'Dec–Apr全期':fDate+" '26";
+}
+
+// ══ TREND CHARTS ══════════════════════════════════════════════════
+let tRevCh=null,tFlowCh=null,tOrdCh=null,tSrc='EC';
+
+function buildTDS(src,metric){
+  const types=src==='EC'?['Post','Menu','VIP Campaign','Message']:['Post','Menu','Live'];
+  return types.map(t=>({label:t,data:MO.map(m=>{const v=AM[m][src][t][metric];return metric==='revenue'?Math.round(v/1e4):v;}),backgroundColor:TC[t],borderRadius:0}));
+}
+function mkLeg(src,id){
+  const types=src==='EC'?['Post','Menu','VIP Campaign','Message']:['Post','Menu','Live'];
+  document.getElementById(id).innerHTML=types.map(t=>`<div class="leg-item"><div class="leg-dot" style="background:${TC[t]}"></div>${t}</div>`).join('');
+}
+function calcTot(src,metric){
+  const types=src==='EC'?['Post','Menu','VIP Campaign','Message']:['Post','Menu','Live'];
+  let t=0; types.forEach(tp=>MO.forEach(m=>{t+=AM[m][src][tp][metric];}));
+  return metric==='revenue'?'$'+fmtW(t)+' 累計':fmtK(t)+' 累計';
+}
+function renderTrend(){
+  const src=tSrc,lbl=src==='EC'?'EC 全電商 OA':'PX 官方 OA';
+  ['rev','flow','ord'].forEach((k,i)=>{
+    const metric=['revenue','flow','orders'][i];
+    document.getElementById(`t-${k}-title`).textContent=`${lbl} — 各月${['業績','流量','訂單'][i]}拆解`;
+    document.getElementById(`t-${k}-chip`).textContent=calcTot(src,metric);
+    mkLeg(src,`t-${k}-leg`);
+  });
+  const opts=(cb)=>({responsive:true,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:GR},y:{stacked:true,grid:GR,ticks:{callback:cb}}}});
+  const dsR=buildTDS(src,'revenue'),dsF=buildTDS(src,'flow'),dsO=buildTDS(src,'orders');
+  if(tRevCh){tRevCh.data.datasets=dsR;tRevCh.update();tFlowCh.data.datasets=dsF;tFlowCh.update();tOrdCh.data.datasets=dsO;tOrdCh.update();}
+  else{tRevCh=new Chart(document.getElementById('c-t-rev'),{type:'bar',data:{labels:MONTHS,datasets:dsR},options:opts(fmtW)});tFlowCh=new Chart(document.getElementById('c-t-flow'),{type:'bar',data:{labels:MONTHS,datasets:dsF},options:opts(fmtK)});tOrdCh=new Chart(document.getElementById('c-t-ord'),{type:'bar',data:{labels:MONTHS,datasets:dsO},options:opts(v=>v)});}
+}
+function setTSrc(s,btn){tSrc=s;document.querySelectorAll('.src-btn[id^=tsrc]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTrend();}
+
+// ══ CAMPAIGN ══════════════════════════════════════════════════════
+let campCh=null,curCS='EC';
+function renderTypeGrid(src){
+  const colors={Post:'#10b981',Menu:'#3b82f6','VIP Campaign':'#f59e0b',Message:'#8b5cf6',Live:'#f43f5e'};
+  document.getElementById('type-grid').innerHTML=Object.entries(TYPE_INFO[src]).map(([t,d])=>{
+    const c=colors[t]||'#94a3b8';
+    return `<div class="type-card" style="--c:${c}"><div class="type-name">${d.icon} ${t}</div><div class="type-rev" style="color:${c}">$${d.rev.toLocaleString()}</div><div class="type-meta">流量 ${d.flow.toLocaleString()} ／ 訂單 ${d.orders.toLocaleString()} ／ <strong style="color:${d.conv>=5?'var(--green)':'inherit'}">${d.conv}%${d.conv>=5?' ✦':''}</strong></div></div>`;
+  }).join('');
+}
+function renderCampBar(camps){
+  const bg=camps.map(c=>TC[c.type]||'#94a3b8');
+  if(campCh){campCh.data.labels=camps.map(c=>c.name);campCh.data.datasets[0].data=camps.map(c=>c.revenue);campCh.data.datasets[0].backgroundColor=bg;campCh.update();}
+  else{campCh=new Chart(document.getElementById('c-camp-bar'),{type:'bar',data:{labels:camps.map(c=>c.name),datasets:[{label:'收益',data:camps.map(c=>c.revenue),backgroundColor:bg,borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` $${c.parsed.x.toLocaleString()}`}}},scales:{x:{grid:GR,ticks:{callback:fmtW}},y:{grid:{display:false}}}}});}
+}
+function renderCampTable(camps,src){
+  const maxR=camps[0].revenue,cls=src==='EC'?'ec':'px';
+  document.getElementById('camp-tbody').innerHTML=camps.map((c,i)=>{
+    const pct=(c.revenue/maxR*100).toFixed(1),tc=TC[c.type]||'#94a3b8';
+    const dots=MO.map(m=>`<span class="mdot ${c.months.includes(m)?'on':''}">${m}</span>`).join('');
+    return `<tr><td class="td-mono">${i+1}</td><td class="td-name">${c.name}</td><td><span class="src-tag ${cls}">${src}</span></td><td><span class="type-pill" style="color:${tc};background:${tc}22">${c.type}</span></td><td><div class="month-dots">${dots}</div></td><td class="td-mono">${c.flow.toLocaleString()}</td><td class="td-mono">${c.orders.toLocaleString()}</td><td class="td-mono ${c.conv>=5?'td-hi':''}">${c.conv}%</td><td class="td-mono">$${c.avg.toLocaleString()}</td><td class="td-rev">$${c.revenue.toLocaleString()}</td><td><div class="bar-wrap"><div class="mini-bg"><div class="mini-fill" style="width:${pct}%;background:${src==='EC'?'#10b981':'#3b82f6'}"></div></div><span class="td-mono" style="font-size:10px;min-width:26px">${pct}%</span></div></td></tr>`;
+  }).join('');
+}
+function setCampSrc(src){
+  curCS=src;
+  ['csrc-ec','csrc-px'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(src==='EC'?'csrc-ec':'csrc-px').classList.add('active');
+  document.getElementById('type-title').textContent=`${src} — 各內容類型總覽`;
+  document.getElementById('camp-chart-title').textContent=`Top 15 ${src} Campaigns — 業績排名`;
+  document.getElementById('camp-tbl-title').textContent=`${src} Campaign 明細`;
+  const camps=src==='EC'?EC_CAMPS:PX_CAMPS;
+  renderTypeGrid(src);renderCampBar(camps);renderCampTable(camps,src);
+}
+
+// ══ BINDING CHARTS ════════════════════════════════════════════════
+function initBindingCharts(){
+  const fM=FD.map(d=>d.month);
+  new Chart(document.getElementById('c-b-friend'),{type:'line',data:{labels:fM,datasets:[{label:'好友數',data:FD.map(d=>d.friends),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.07)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#3b82f6'},{label:'綁定數',data:FD.map(d=>d.bound),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GR},y:{grid:GR,ticks:{callback:fmtK}}}}});
+  new Chart(document.getElementById('c-b-rate'),{type:'line',data:{labels:fM,datasets:[{data:FD.map(d=>d.rate),borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,.08)',fill:true,tension:.4,pointRadius:6,pointBackgroundColor:'#06b6d4'}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` 綁定率: ${c.parsed.y}%`}}},scales:{x:{grid:GR},y:{grid:GR,min:0,max:55,ticks:{callback:v=>v+'%'}}}}});
+  new Chart(document.getElementById('c-b-new'),{type:'bar',data:{labels:fM,datasets:[{label:'新增好友',data:FD.map(d=>d.nf),backgroundColor:'rgba(59,130,246,.5)',borderRadius:4},{label:'新增綁定',data:FD.map(d=>d.nb),backgroundColor:'#10b981',borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GR},y:{grid:GR,ticks:{callback:fmtK}}}}});
+  new Chart(document.getElementById('c-b-dl'),{type:'bar',data:{labels:DL.map(d=>d.name),datasets:[{label:'新好友',data:DL.map(d=>d.nc),backgroundColor:'#10b981'},{label:'既有好友',data:DL.map(d=>d.ex),backgroundColor:'#3b82f6'}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:GR,ticks:{callback:fmtK}},y:{stacked:true,grid:{display:false}}}}});
+  const sD=[{ch:"OA 12/22",r:16.8},{ch:"OA 12/23",r:14.3},{ch:"OA 12/28",r:16.7},{ch:"OA 1/7",r:18.7},{ch:"OA 1/13",r:19.7},{ch:"Richmenu",r:19.3},{ch:"FB_1",r:15.1},{ch:"FB_2",r:13.8},{ch:"pxgo",r:10.4},{ch:"APP蓋板",r:9.5}];
+  new Chart(document.getElementById('c-b-sticker'),{type:'bar',data:{labels:sD.map(d=>d.ch),datasets:[{data:sD.map(d=>d.r),backgroundColor:sD.map(d=>d.ch.startsWith('OA')||d.ch==='Richmenu'?'#10b981':'#3b82f6'),borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:GR,ticks:{callback:v=>v+'%'}}}}});
+  const lbD=[{m:'Dec',f:601,c:4.33},{m:'Jan',f:3754,c:5.22},{m:'Feb',f:1378,c:7.91},{m:'Mar',f:527,c:10.82},{m:'Apr',f:113,c:9.73}];
+  new Chart(document.getElementById('c-b-lb'),{type:'bar',data:{labels:lbD.map(d=>d.m),datasets:[{data:lbD.map(d=>d.f),type:'bar',backgroundColor:'rgba(59,130,246,.3)',borderRadius:4,yAxisID:'y'},{data:lbD.map(d=>d.c),type:'line',borderColor:'#10b981',backgroundColor:'transparent',pointRadius:5,pointBackgroundColor:'#10b981',tension:.3,yAxisID:'y2'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:GR,position:'left',ticks:{callback:fmtK}},y2:{grid:{display:false},position:'right',min:0,max:15,ticks:{callback:v=>v+'%'}}}}});
+
+  // DL table
+  const dlTC={Sticker:'#f59e0b','OA推播':'#10b981',Offline:'#f43f5e',Campaign:'#3b82f6',Event:'#8b5cf6'};
+  document.getElementById('dl-tbody').innerHTML=DL.map(d=>{
+    const c=dlTC[d.type]||'#94a3b8',hi=d.nr>=80;
+    return `<tr><td class="td-name">${d.name}</td><td><span class="type-pill" style="color:${c};background:${c}22">${d.type}</span></td><td class="td-mono">${d.ac.toLocaleString()}</td><td class="td-mono" style="color:var(--green);font-weight:700">${d.nc.toLocaleString()}</td><td class="td-mono">${d.ex.toLocaleString()}</td><td class="td-mono ${hi?'td-hi':''}">${d.nr}%${hi?' ✦':''}</td><td style="font-size:11px;color:var(--t2)">${d.note}</td></tr>`;
+  }).join('');
+}
+
+// ══ APPLY FILTER ══════════════════════════════════════════════════
+function applyFilter(){
+  fDate=document.getElementById('f-date').value;
+  fChannel=document.getElementById('f-channel').value;
+  fMedium=document.getElementById('f-medium').value;
+  updateKPIs();
+  if(fChannel==='EC') setCampSrc('EC');
+  else if(fChannel==='PX') setCampSrc('PX');
+}
+
+// ══ NAVIGATION ════════════════════════════════════════════════════
+const PL={overview:'Performance Overview',trend:'Monthly Trends',campaign:'Campaign Metrics',binding:'Binding Analysis'};
+function navTo(name,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('page-label').textContent='— '+PL[name];
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════
+initOverviewCharts();
+updateKPIs();
+renderTrend();
+setCampSrc('EC');
+initBindingCharts();
+</script>
+</body>
+</html>
