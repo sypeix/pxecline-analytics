@@ -159,13 +159,88 @@ td{padding:8px 10px}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── HAMBURGER BUTTON (mobile only) ── */
+.ham-btn{display:none;position:fixed;top:12px;left:12px;z-index:200;width:38px;height:38px;border-radius:9px;background:var(--green);border:none;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:5px;box-shadow:0 2px 8px rgba(6,199,85,.4)}
+.ham-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all .2s}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99;backdrop-filter:blur(2px)}
+
+/* ── TABLET (≤1024px) ── */
+@media(max-width:1024px){
+  .shell{max-width:100%}
+  .sidebar{width:200px}
+  .kpi-row.cols-5{grid-template-columns:repeat(3,1fr)}
+  .g64{grid-template-columns:1fr}
+  .search-box{display:none}
+}
+
+/* ── MOBILE (≤768px) ── */
+@media(max-width:768px){
+  /* sidebar off-canvas */
+  .ham-btn{display:flex}
+  .sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:none}
+  .sidebar.open{left:0;box-shadow:var(--sh)}
+  .sidebar-overlay.open{display:block}
+
+  /* topbar */
+  .topbar{padding:0 12px 0 58px;height:52px}
+  .topbar-title span{display:none}
+  .icon-btn{width:30px;height:30px}
+
+  /* content */
+  .content{padding:14px}
+
+  /* filter bar — stack vertically */
+  .filter-bar{flex-direction:column;align-items:stretch;gap:8px;padding:12px}
+  .filter-divider{display:none}
+  .filter-label{font-size:11px;margin-bottom:2px}
+  .filter-select{width:100%}
+  .filter-apply{width:100%;text-align:center;padding:9px}
+
+  /* KPI — 2 cols on mobile */
+  .kpi-row.cols-5{grid-template-columns:1fr 1fr}
+  .kpi-row.cols-3{grid-template-columns:1fr 1fr}
+  .kpi-val{font-size:20px}
+
+  /* all 2-col grids → 1-col */
+  .g2,.g64,.g3{grid-template-columns:1fr}
+
+  /* plan grid */
+  .plan-grid{grid-template-columns:1fr}
+
+  /* type grid */
+  .type-grid{grid-template-columns:1fr}
+
+  /* table — horizontal scroll */
+  .tbl-wrap{-webkit-overflow-scrolling:touch}
+
+  /* insight font */
+  .insight{font-size:11px}
+
+  /* cards */
+  .card{padding:14px}
+  .kpi{padding:14px 16px}
+}
+
+/* ── SMALL MOBILE (≤420px) ── */
+@media(max-width:420px){
+  .kpi-row.cols-5,.kpi-row.cols-3{grid-template-columns:1fr}
+  .kpi-val{font-size:22px}
+  .topbar-title{font-size:13px}
+}
 </style>
 </head>
 <body>
+<!-- HAMBURGER (mobile) -->
+<button class="ham-btn" onclick="toggleSidebar()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
+
 <div class="shell">
 
 <!-- SIDEBAR -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sb-logo">
     <div class="logo-mark">L</div>
     <div><div class="logo-text">LINE OA</div><div class="logo-sub">Analytics Dashboard</div></div>
@@ -371,7 +446,7 @@ td{padding:8px 10px}
 const MONTHS=['Dec \'25',"Jan '26","Feb '26","Mar '26","Apr '26"];
 const MO=['Dec','Jan','Feb','Mar','Apr'];
 
-const AM={Dec:{EC:{flow:12375,orders:266,revenue:869281,cost:22560,roas:38.5,conv:2.15,Post:{flow:3213,orders:78,revenue:214813},Menu:{flow:9114,orders:187,revenue:654028},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:29,orders:1,revenue:440},Live:{flow:0,orders:0,revenue:0}},PX:{flow:100834,orders:2319,revenue:5255162,cost:82883,roas:63.4,conv:2.3,Post:{flow:92162,orders:1972,revenue:4116516},Menu:{flow:3056,orders:77,revenue:153867},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:5616,orders:270,revenue:984779}},total:{flow:113209,orders:2585,revenue:6124443}},Jan:{EC:{flow:79313,orders:2580,revenue:29613779,cost:165893,roas:178.5,conv:3.25,Post:{flow:35233,orders:1119,revenue:9776824},Menu:{flow:37435,orders:1311,revenue:17770741},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:6642,orders:150,revenue:2066214},Live:{flow:0,orders:0,revenue:0}},PX:{flow:98363,orders:1664,revenue:3898177,cost:69336,roas:56.2,conv:1.69,Post:{flow:90997,orders:1483,revenue:3558391},Menu:{flow:3649,orders:73,revenue:120296},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:3717,orders:108,revenue:219490}},total:{flow:177676,orders:4244,revenue:33511956}},Feb:{EC:{flow:50444,orders:2142,revenue:15136123,cost:145509,roas:104.0,conv:4.25,Post:{flow:18462,orders:782,revenue:13347771},Menu:{flow:7397,orders:515,revenue:980806},'VIP Campaign':{flow:18980,orders:678,revenue:282949},Message:{flow:5604,orders:167,revenue:416617},Live:{flow:0,orders:0,revenue:0}},PX:{flow:59645,orders:1128,revenue:2601473,cost:74876,roas:34.7,conv:1.89,Post:{flow:54769,orders:1024,revenue:141171},Menu:{flow:3417,orders:54,revenue:10884},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1459,orders:50,revenue:0}},total:{flow:110089,orders:3270,revenue:17737596}},Mar:{EC:{flow:85362,orders:4549,revenue:21306165,cost:0,roas:null,conv:5.33,Post:{flow:33381,orders:1479,revenue:7614059},Menu:{flow:5136,orders:431,revenue:2664680},'VIP Campaign':{flow:41663,orders:2305,revenue:9248850},Message:{flow:4640,orders:310,revenue:1609556},Live:{flow:0,orders:0,revenue:0}},PX:{flow:76327,orders:1521,revenue:3377325,cost:76848,roas:43.9,conv:1.99,Post:{flow:66647,orders:1280,revenue:2678706},Menu:{flow:3680,orders:58,revenue:180767},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:6000,orders:183,revenue:517852}},total:{flow:161689,orders:6070,revenue:24683490}},Apr:{EC:{flow:86417,orders:3580,revenue:14018766,cost:0,roas:null,conv:4.14,Post:{flow:32497,orders:1124,revenue:6044134},Menu:{flow:37766,orders:1492,revenue:4456352},'VIP Campaign':{flow:8351,orders:643,revenue:2172242},Message:{flow:7048,orders:277,revenue:1190986},Live:{flow:0,orders:0,revenue:0}},PX:{flow:91464,orders:1056,revenue:1929645,cost:63819,roas:30.2,conv:1.15,Post:{flow:86031,orders:935,revenue:1720974},Menu:{flow:3977,orders:66,revenue:113209},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1399,orders:52,revenue:85071}},total:{flow:177881,orders:4636,revenue:15948411}}};
+const AM={Dec:{EC:{flow:12375,orders:266,revenue:869281,cost:22560,roas:38.5,conv:2.15,Post:{flow:3213,orders:78,revenue:214813},Menu:{flow:9114,orders:187,revenue:654028},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:29,orders:1,revenue:440},Live:{flow:0,orders:0,revenue:0}},PX:{flow:100834,orders:2319,revenue:5255162,cost:82883,roas:63.4,conv:2.3,Post:{flow:92162,orders:1972,revenue:4116516},Menu:{flow:3056,orders:77,revenue:153867},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:5616,orders:270,revenue:984779}},total:{flow:113209,orders:2585,revenue:6124443}},Jan:{EC:{flow:79313,orders:2580,revenue:29613779,cost:165893,roas:178.5,conv:3.25,Post:{flow:35233,orders:1119,revenue:9776824},Menu:{flow:37435,orders:1311,revenue:17770741},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:6642,orders:150,revenue:2066214},Live:{flow:0,orders:0,revenue:0}},PX:{flow:98363,orders:1664,revenue:3898177,cost:69336,roas:56.2,conv:1.69,Post:{flow:90997,orders:1483,revenue:3558391},Menu:{flow:3649,orders:73,revenue:120296},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:3717,orders:108,revenue:219490}},total:{flow:177676,orders:4244,revenue:33511956}},Feb:{EC:{flow:50444,orders:2142,revenue:15136123,cost:145509,roas:104.0,conv:4.25,Post:{flow:18462,orders:782,revenue:13347771},Menu:{flow:7397,orders:515,revenue:980806},'VIP Campaign':{flow:18980,orders:678,revenue:282949},Message:{flow:5604,orders:167,revenue:416617},Live:{flow:0,orders:0,revenue:0}},PX:{flow:59645,orders:1128,revenue:2601473,cost:74876,roas:34.7,conv:1.89,Post:{flow:54769,orders:1024,revenue:141171},Menu:{flow:3417,orders:54,revenue:10884},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1459,orders:50,revenue:0}},total:{flow:110089,orders:3270,revenue:17737596}},Mar:{EC:{flow:85362,orders:4549,revenue:21306165,cost:0,roas:null,conv:5.33,Post:{flow:33381,orders:1479,revenue:7614059},Menu:{flow:5136,orders:431,revenue:2664680},'VIP Campaign':{flow:41663,orders:2305,revenue:9248850},Message:{flow:4640,orders:310,revenue:1609556},Live:{flow:0,orders:0,revenue:0}},PX:{flow:76327,orders:1521,revenue:3377325,cost:76848,roas:43.9,conv:1.99,Post:{flow:66647,orders:1280,revenue:2678706},Menu:{flow:3680,orders:58,revenue:180767},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:6000,orders:183,revenue:517852}},total:{flow:161689,orders:6070,revenue:24683490}},Apr:{EC:{flow:86417,orders:3580,revenue:14018766,cost:120000,roas:116.8,conv:4.14,Post:{flow:32497,orders:1124,revenue:6044134},Menu:{flow:37766,orders:1492,revenue:4456352},'VIP Campaign':{flow:8351,orders:643,revenue:2172242},Message:{flow:7048,orders:277,revenue:1190986},Live:{flow:0,orders:0,revenue:0}},PX:{flow:91464,orders:1056,revenue:1929645,cost:63819,roas:30.2,conv:1.15,Post:{flow:86031,orders:935,revenue:1720974},Menu:{flow:3977,orders:66,revenue:113209},'VIP Campaign':{flow:0,orders:0,revenue:0},Message:{flow:0,orders:0,revenue:0},Live:{flow:1399,orders:52,revenue:85071}},total:{flow:177881,orders:4636,revenue:15948411}}};
 
 const FD=[{month:"Jan '26",friends:62438,bound:8343,rate:13.4,nf:62438,nb:8343},{month:"Feb '26",friends:104148,bound:19821,rate:19.0,nf:41710,nb:11478},{month:"Mar '26",friends:111761,bound:26912,rate:24.1,nf:7613,nb:7091},{month:"Apr '26",friends:124198,bound:39941,rate:32.2,nf:12437,nb:13029},{month:"May '26",friends:140982,bound:58799,rate:41.7,nf:16784,nb:18858}];
 
@@ -442,7 +517,32 @@ function initOverviewCharts(){
 
   // Donut
   const dd=getDonutData();
-  ovDonutCh=new Chart(document.getElementById('c-ov-donut'),{type:'doughnut',data:{labels:['EC 全電商 OA','PX 官方 OA'],datasets:[{data:[dd.ec,dd.px],backgroundColor:['#10b981','#3b82f6'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toLocaleString()}`}}}}});
+  const donutLabelPlugin = {
+    id:'donutLabels',
+    afterDatasetDraw(chart){
+      const {ctx,data}=chart;
+      const total=data.datasets[0].data.reduce((a,b)=>a+b,0);
+      chart.getDatasetMeta(0).data.forEach((arc,i)=>{
+        const val=data.datasets[0].data[i];
+        const pct=total>0?Math.round(val/total*100):0;
+        if(pct===0) return;
+        const angle=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+        const r=(arc.outerRadius+arc.innerRadius)/2;
+        const x=arc.x+Math.cos(angle)*r;
+        const y=arc.y+Math.sin(angle)*r;
+        ctx.save();
+        ctx.fillStyle='#fff';
+        ctx.font='bold 13px Plus Jakarta Sans, sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.shadowColor='rgba(0,0,0,.18)';
+        ctx.shadowBlur=4;
+        ctx.fillText(pct+'%',x,y);
+        ctx.restore();
+      });
+    }
+  };
+  ovDonutCh=new Chart(document.getElementById('c-ov-donut'),{type:'doughnut',data:{labels:['EC 全電商 OA','PX 官方 OA'],datasets:[{data:[dd.ec,dd.px],backgroundColor:['#10b981','#3b82f6'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toLocaleString()}`}}}},plugins:[donutLabelPlugin]});
   updateDonutLegend(dd);
 
   // ROAS
@@ -603,6 +703,14 @@ function applyFilter(){
   else if(fChannel==='PX') setCampSrc('PX');
 }
 
+// ══ SIDEBAR TOGGLE (mobile) ═══════════════════════════════════════
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sb-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+
 // ══ NAVIGATION ════════════════════════════════════════════════════
 const PL={overview:'Performance Overview',trend:'Monthly Trends',campaign:'Campaign Metrics',binding:'Binding Analysis'};
 function navTo(name,btn){
@@ -611,6 +719,11 @@ function navTo(name,btn){
   document.getElementById('pg-'+name).classList.add('active');
   btn.classList.add('active');
   document.getElementById('page-label').textContent='— '+PL[name];
+  // close sidebar on mobile after navigation
+  if(window.innerWidth<=768){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sb-overlay').classList.remove('open');
+  }
 }
 
 // ══ INIT ══════════════════════════════════════════════════════════
